@@ -98,7 +98,7 @@ else
   USE_MULTIPATH=--disable-multipath
 endif
 
-ifeq ($(WANT_CUMULUS_NODE), 1)
+ifneq ($(WANT_CUMULUS_NODE), 0)
   USE_CUMULUS=--enable-cumulus=yes
 else
   USE_CUMULUS=--enable-cumulus=no
