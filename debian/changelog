@@ -2,6 +2,7 @@ frr (4.0-0~bionic0+exo1) bionic; urgency=medium
 
   * Prepare port to Bionic.
   * d/rules: use --enable-cumulus as a configure option.
+  * d/source: switch to 3.0 (quilt) format.
 
  -- Vincent Bernat <bernat@debian.org>  Fri, 11 May 2018 15:46:06 +0200
 
