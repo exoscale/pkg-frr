@@ -2,6 +2,7 @@ frr (4.0-0~bionic0+exo1) bionic; urgency=medium
 
   * Prepare port to Bionic.
   * d/rules: use --enable-cumulus as a configure option.
+  * d/rules: delay restart on upgrade.
   * d/source: switch to 3.0 (quilt) format.
   * d/install: do not ship development files, move lib to a private directory.
 
