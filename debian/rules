@@ -142,6 +142,7 @@ override_dh_auto_configure:
 		--enable-exampledir=/usr/share/doc/frr/examples/ \
 		--localstatedir=/var/run/frr \
 		--sbindir=/usr/lib/frr \
+		--libdir=/usr/lib/frr \
 		--sysconfdir=/etc/frr \
 		$(USE_SNMP) \
 		$(USE_OSPFAPI) \
@@ -201,9 +202,10 @@ else
 	mkdir -p debian/tmp/usr/share/snmp/mibs/
 endif
 
-	# cleaning .la files
-	sed -i "/dependency_libs/ s/'.*'/''/" debian/tmp/usr/lib/*.la
-	sed -i "/dependency_libs/ s/'.*'/''/" debian/tmp/usr/lib/frr/modules/*.la
+	# Remove development files
+	rm debian/tmp/usr/lib/frr/*.so
+	rm debian/tmp/usr/lib/frr/*.la
+	rm debian/tmp/usr/lib/frr/*.a
 
 override_dh_systemd_start:
 	dh_systemd_start frr.service
