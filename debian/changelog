@@ -1,4 +1,10 @@
-frr (@VERSION@) RELEASED; urgency=medium
+frr (4.0-0~bionic0+exo1) bionic; urgency=medium
+
+  * Prepare port to Bionic.
+
+ -- Vincent Bernat <bernat@debian.org>  Fri, 11 May 2018 15:46:06 +0200
+
+frr (4.0) RELEASED; urgency=medium
 
   * ISIS-MT - https://tools.ietf.org/html/rfc5120
   * BGP - RPKI (RFC 6810)
