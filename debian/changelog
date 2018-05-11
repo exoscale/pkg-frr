@@ -5,6 +5,7 @@ frr (4.0-0~bionic0+exo1) bionic; urgency=medium
   * d/rules: delay restart on upgrade.
   * d/source: switch to 3.0 (quilt) format.
   * d/install: do not ship development files, move lib to a private directory.
+  * d/patches: add patches for Juniper compatibility.
 
  -- Vincent Bernat <bernat@debian.org>  Fri, 11 May 2018 15:46:06 +0200
 
