@@ -1,2 +1,2 @@
-2034.patch
-2035.patch
+0001-bgpd-add-an-option-for-RT-auto-derivation-to-use-RFC.patch
+0002-bgpd-add-basic-support-for-ETI-and-ESI-for-BGP-EVPN.patch

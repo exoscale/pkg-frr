@@ -1,7 +1,8 @@
-From bf1061d876951adf778c5d4da907cb6bd914cba4 Mon Sep 17 00:00:00 2001
+From b01353cb59ccf28f1bb64818533174a463147b23 Mon Sep 17 00:00:00 2001
 From: Vincent Bernat <vincent@bernat.im>
 Date: Wed, 12 Apr 2017 11:24:07 +0200
-Subject: [PATCH] bgpd: add an option for RT auto-derivation to use RFC 8635.
+Subject: [PATCH 1/2] bgpd: add an option for RT auto-derivation to use RFC
+ 8635.
 
 RFC 8635 explains how RT auto-derivation should be done in section
 5.1.2.1 [1]. In addition to encoding the VNI in the lowest bytes, a
@@ -14,18 +15,18 @@ additional option, "autort rfc8365-compatible" is used.
 
 Signed-off-by: Vincent Bernat <vincent@bernat.im>
 ---
- bgpd/bgp_evpn.c         | 50 +++++++++++++++++++++++++++++++++++++++++++++++
+ bgpd/bgp_evpn.c         | 50 +++++++++++++++++++++++++++++++++++++++
  bgpd/bgp_evpn.h         |  1 +
  bgpd/bgp_evpn_private.h |  1 +
- bgpd/bgp_evpn_vty.c     | 52 +++++++++++++++++++++++++++++++++++++++++++++++++
+ bgpd/bgp_evpn_vty.c     | 52 +++++++++++++++++++++++++++++++++++++++++
  bgpd/bgpd.h             |  3 +++
  5 files changed, 107 insertions(+)
 
 diff --git a/bgpd/bgp_evpn.c b/bgpd/bgp_evpn.c
-index e5e5f7269..f940c0f57 100644
+index 824b72b240ad..1ac0d55e6de2 100644
 --- a/bgpd/bgp_evpn.c
 +++ b/bgpd/bgp_evpn.c
-@@ -453,6 +453,8 @@ static void form_auto_rt(struct bgp *bgp, vni_t vni, struct list *rtl)
+@@ -460,6 +460,8 @@ static void form_auto_rt(struct bgp *bgp, vni_t vni, struct list *rtl)
  	struct ecommunity_val eval;
  	struct ecommunity *ecomadd;
  
@@ -34,7 +35,7 @@ index e5e5f7269..f940c0f57 100644
  	encode_route_target_as((bgp->as & 0xFFFF), vni, &eval);
  
  	ecomadd = ecommunity_new();
-@@ -3224,6 +3226,41 @@ static void bgp_evpn_handle_export_rt_change_for_vrf(struct bgp *bgp_vrf)
+@@ -3052,6 +3054,41 @@ static void bgp_evpn_handle_export_rt_change_for_vrf(struct bgp *bgp_vrf)
  		update_routes_for_vni(bgp_def, vpn);
  }
  
@@ -76,7 +77,7 @@ index e5e5f7269..f940c0f57 100644
  /*
   * Public functions.
   */
-@@ -3335,6 +3372,8 @@ void evpn_rt_delete_auto(struct bgp *bgp, vni_t vni, struct list *rtl)
+@@ -3139,6 +3176,8 @@ void evpn_rt_delete_auto(struct bgp *bgp, vni_t vni,
  	struct ecommunity *ecom, *ecom_auto;
  	struct ecommunity_val eval;
  
@@ -85,7 +86,7 @@ index e5e5f7269..f940c0f57 100644
  	encode_route_target_as((bgp->as & 0xFFFF), vni, &eval);
  
  	ecom_auto = ecommunity_new();
-@@ -3494,6 +3533,17 @@ void bgp_evpn_handle_router_id_update(struct bgp *bgp, int withdraw)
+@@ -3299,6 +3338,17 @@ void bgp_evpn_handle_router_id_update(struct bgp *bgp, int withdraw)
  	}
  }
  
@@ -104,7 +105,7 @@ index e5e5f7269..f940c0f57 100644
   * Handle change to export RT - update and advertise local routes.
   */
 diff --git a/bgpd/bgp_evpn.h b/bgpd/bgp_evpn.h
-index dd8d6e2e8..8e954159c 100644
+index 9400916845b0..2d86d7e4d3ff 100644
 --- a/bgpd/bgp_evpn.h
 +++ b/bgpd/bgp_evpn.h
 @@ -25,6 +25,7 @@
@@ -116,10 +117,10 @@ index dd8d6e2e8..8e954159c 100644
  static inline int is_evpn_enabled(void)
  {
 diff --git a/bgpd/bgp_evpn_private.h b/bgpd/bgp_evpn_private.h
-index 1eecb9ecf..5a3d9e093 100644
+index 2d52e1995d2b..d5312317e8da 100644
 --- a/bgpd/bgp_evpn_private.h
 +++ b/bgpd/bgp_evpn_private.h
-@@ -385,6 +385,7 @@ extern void bgp_evpn_unconfigure_import_rt_for_vrf(struct bgp *bgp_vrf,
+@@ -387,6 +387,7 @@ extern void bgp_evpn_unconfigure_import_rt_for_vrf(struct bgp *bgp_vrf,
  						   struct ecommunity *ecomdel);
  extern int bgp_evpn_handle_export_rt_change(struct bgp *bgp,
  					    struct bgpevpn *vpn);
@@ -128,10 +129,10 @@ index 1eecb9ecf..5a3d9e093 100644
  extern void bgp_evpn_handle_rd_change(struct bgp *bgp, struct bgpevpn *vpn,
  				      int withdraw);
 diff --git a/bgpd/bgp_evpn_vty.c b/bgpd/bgp_evpn_vty.c
-index 8fd7cb5d1..439bea5bd 100644
+index b463896c4933..2af151cc5550 100644
 --- a/bgpd/bgp_evpn_vty.c
 +++ b/bgpd/bgp_evpn_vty.c
-@@ -2502,6 +2502,24 @@ static void evpn_unset_advertise_all_vni(struct bgp *bgp)
+@@ -2290,6 +2290,24 @@ static void evpn_unset_advertise_all_vni(struct bgp *bgp)
  	bgp_zebra_advertise_all_vni(bgp, bgp->advertise_all_vni);
  	bgp_evpn_cleanup_on_disable(bgp);
  }
@@ -156,7 +157,7 @@ index 8fd7cb5d1..439bea5bd 100644
  #endif /* HAVE_CUMULUS */
  
  static void write_vni_config(struct vty *vty, struct bgpevpn *vpn)
-@@ -2655,6 +2673,35 @@ DEFUN (no_bgp_evpn_advertise_all_vni,
+@@ -2440,6 +2458,35 @@ DEFUN (no_bgp_evpn_advertise_all_vni,
  	return CMD_SUCCESS;
  }
  
@@ -189,10 +190,10 @@ index 8fd7cb5d1..439bea5bd 100644
 +	return CMD_SUCCESS;
 +}
 +
- DEFUN (bgp_evpn_default_originate,
-        bgp_evpn_default_originate_cmd,
-        "default-originate <ipv4 | ipv6>",
-@@ -4378,6 +4425,9 @@ void bgp_config_write_evpn_info(struct vty *vty, struct bgp *bgp, afi_t afi,
+ DEFUN (bgp_evpn_advertise_type5,
+        bgp_evpn_advertise_type5_cmd,
+        "advertise " BGP_AFI_CMD_STR "" BGP_SAFI_CMD_STR,
+@@ -4034,6 +4081,9 @@ void bgp_config_write_evpn_info(struct vty *vty, struct bgp *bgp, afi_t afi,
  	if (bgp->advertise_all_vni)
  		vty_out(vty, "  advertise-all-vni\n");
  
@@ -202,7 +203,7 @@ index 8fd7cb5d1..439bea5bd 100644
  	if (bgp->advertise_gw_macip)
  		vty_out(vty, "  advertise-default-gw\n");
  
-@@ -4455,6 +4505,8 @@ void bgp_ethernetvpn_init(void)
+@@ -4067,6 +4117,8 @@ void bgp_ethernetvpn_init(void)
  #if defined(HAVE_CUMULUS)
  	install_element(BGP_EVPN_NODE, &bgp_evpn_advertise_all_vni_cmd);
  	install_element(BGP_EVPN_NODE, &no_bgp_evpn_advertise_all_vni_cmd);
@@ -212,10 +213,10 @@ index 8fd7cb5d1..439bea5bd 100644
  	install_element(BGP_EVPN_NODE, &no_bgp_evpn_advertise_default_gw_cmd);
  	install_element(BGP_EVPN_NODE, &bgp_evpn_advertise_type5_cmd);
 diff --git a/bgpd/bgpd.h b/bgpd/bgpd.h
-index 0c5f72662..7d5222120 100644
+index c4ac4b0adb05..3eb49348b00d 100644
 --- a/bgpd/bgpd.h
 +++ b/bgpd/bgpd.h
-@@ -423,6 +423,9 @@ struct bgp {
+@@ -412,6 +412,9 @@ struct bgp {
  	/* EVPN enable - advertise local VNIs and their MACs etc. */
  	int advertise_all_vni;
  
@@ -225,3 +226,6 @@ index 0c5f72662..7d5222120 100644
  	/* Hash table of Import RTs to EVIs */
  	struct hash *import_rt_hash;
  
+-- 
+2.17.0
+
