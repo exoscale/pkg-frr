@@ -142,7 +142,6 @@ override_dh_auto_configure:
 		--enable-exampledir=/usr/share/doc/frr/examples/ \
 		--localstatedir=/var/run/frr \
 		--sbindir=/usr/lib/frr \
-		--libdir=/usr/lib/frr \
 		--sysconfdir=/etc/frr \
 		$(USE_SNMP) \
 		$(USE_OSPFAPI) \
@@ -203,9 +202,7 @@ else
 endif
 
 	# Remove development files
-	rm debian/tmp/usr/lib/frr/*.so
-	rm debian/tmp/usr/lib/frr/*.la
-	rm debian/tmp/usr/lib/frr/*.a
+	rm debian/tmp/usr/lib/frr/modules/*.la
 
 override_dh_install_init:
 	dh_installinit --restart-after-upgrade

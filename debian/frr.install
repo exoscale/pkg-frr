@@ -1,5 +1,6 @@
 etc/frr/
 usr/bin/vtysh
+usr/lib/*.so.*
 usr/lib/frr
 tools/frr usr/lib/frr
 usr/share/doc/frr/

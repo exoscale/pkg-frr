@@ -4,7 +4,7 @@ frr (4.0-0~bionic0+exo1) bionic; urgency=medium
   * d/rules: use --enable-cumulus as a configure option.
   * d/rules: delay restart on upgrade.
   * d/source: switch to 3.0 (quilt) format.
-  * d/install: do not ship development files, move lib to a private directory.
+  * d/install: do not ship development files.
   * d/patches: add patches for Juniper compatibility.
   * d/control: add dependency to libpython-dev.
 
