@@ -1,7 +1,7 @@
 From e5c3d93a6dbb235c9a121bd5c710fae7ddc5811a Mon Sep 17 00:00:00 2001
 From: Vincent Bernat <vincent@bernat.im>
 Date: Fri, 6 Apr 2018 15:52:48 +0200
-Subject: [PATCH 2/2] bgpd: add basic support for ETI and ESI for BGP EVPN
+Subject: [PATCH 2/3] bgpd: add basic support for ETI and ESI for BGP EVPN
 
 Ethernet Tag ID (ETI) is part of the prefix. It cannot just be ignored
 as it needs to be used when checking for prefix uniqueness. Moreover,

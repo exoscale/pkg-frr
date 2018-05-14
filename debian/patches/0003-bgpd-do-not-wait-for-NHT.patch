@@ -1,0 +1,46 @@
+From 45a0607cfab3f7fc2d8c5acb44f674112bd00ba8 Mon Sep 17 00:00:00 2001
+From: Vincent Bernat <vincent@bernat.im>
+Date: Mon, 14 May 2018 13:52:59 +0200
+Subject: [PATCH 3/3] bgpd: do not wait for NHT
+
+We still want to use --enable-cumulus (for other reasons). Just
+disable the two unwanted behaviour:
+
+ - do not wait for next-hop availability to establish BGP
+   session (next-hop tracking doesn't account for IP rules)
+
+ - inability to bind to a VRF is not fatal
+---
+ bgpd/bgp_fsm.c     | 2 +-
+ bgpd/bgp_network.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/bgpd/bgp_fsm.c b/bgpd/bgp_fsm.c
+index de453de0c826..e32d446cc8cc 100644
+--- a/bgpd/bgp_fsm.c
++++ b/bgpd/bgp_fsm.c
+@@ -1387,7 +1387,7 @@ int bgp_start(struct peer *peer)
+ 	if (!bgp_find_or_add_nexthop(peer->bgp,
+ 				     family2afi(peer->su.sa.sa_family), NULL,
+ 				     peer, connected)) {
+-#if defined(HAVE_CUMULUS)
++#if 0
+ 		if (bgp_debug_neighbor_events(peer))
+ 			zlog_debug("%s [FSM] Waiting for NHT", peer->host);
+ 
+diff --git a/bgpd/bgp_network.c b/bgpd/bgp_network.c
+index bf39cbe1fcf9..b743c93431e9 100644
+--- a/bgpd/bgp_network.c
++++ b/bgpd/bgp_network.c
+@@ -223,7 +223,7 @@ static int bgp_get_instance_for_inc_conn(int sock, struct bgp **bgp_inst)
+ 	name[0] = '\0';
+ 	rc = getsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, name, &name_len);
+ 	if (rc != 0) {
+-#if defined(HAVE_CUMULUS)
++#if 0
+ 		zlog_err("[Error] BGP SO_BINDTODEVICE get failed (%s), sock %d",
+ 			 safe_strerror(errno), sock);
+ 		return -1;
+-- 
+2.17.0
+

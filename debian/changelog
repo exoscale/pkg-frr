@@ -1,3 +1,9 @@
+frr (4.0-0~bionic0+exo2) bionic; urgency=medium
+
+  * d/patches: remove NHT tracking (Cumulus-specific).
+
+ -- Vincent Bernat <bernat@debian.org>  Mon, 14 May 2018 13:55:06 +0200
+
 frr (4.0-0~bionic0+exo1) bionic; urgency=medium
 
   * Prepare port to Bionic.
