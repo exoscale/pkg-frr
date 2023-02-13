@@ -1,3 +1,14 @@
-Tests: daemons
+Tests: zebra-lo
 Depends: frr
-Restrictions: needs-root
+Restrictions: needs-root, isolation-container
+
+Tests: bgpd-snmp-rpki
+Depends: frr,
+         frr-rpki-rtrlib,
+         frr-snmp
+Restrictions: needs-root, isolation-container
+
+Tests: py-frr-reload
+Depends: frr,
+         frr-pythontools
+Restrictions: needs-root, isolation-container
