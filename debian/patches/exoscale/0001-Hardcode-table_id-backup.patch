@@ -1,0 +1,127 @@
+From c626802d547e36a67532c78899e78887b41cdc1c Mon Sep 17 00:00:00 2001
+From: Alessandro Ratti <alessandro.ratti@exoscale.ch>
+Date: Thu, 29 Dec 2022 18:07:59 +0100
+Subject: [PATCH] Hardcode table_id backup
+
+This is a first, hacky attempt to hardcode a backup table_id to allow
+zebra to look in a different routing table if it cannot resolve the
+next-hop using the table main (id=254).
+---
+ lib/zclient.c     | 2 ++
+ zebra/rib.h       | 1 +
+ zebra/zapi_msg.c  | 6 ++++--
+ zebra/zebra_rnh.c | 5 +++--
+ zebra/zebra_rnh.h | 2 +-
+ 5 files changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/lib/zclient.c b/lib/zclient.c
+index 07c7e5aea..1403f150e 100644
+--- a/lib/zclient.c
++++ b/lib/zclient.c
+@@ -778,6 +778,7 @@ enum zclient_send_status zclient_send_rnh(struct zclient *zclient, int command,
+ 					  vrf_id_t vrf_id)
+ {
+ 	struct stream *s;
++	uint8_t table_id_backup = 100;
+ 
+ 	s = zclient->obuf;
+ 	stream_reset(s);
+@@ -785,6 +786,7 @@ enum zclient_send_status zclient_send_rnh(struct zclient *zclient, int command,
+ 	stream_putc(s, (connected) ? 1 : 0);
+ 	stream_putc(s, (resolve_via_def) ? 1 : 0);
+ 	stream_putw(s, safi);
++	stream_putc(s, table_id_backup);
+ 	stream_putw(s, PREFIX_FAMILY(p));
+ 	stream_putc(s, p->prefixlen);
+ 	switch (PREFIX_FAMILY(p)) {
+diff --git a/zebra/rib.h b/zebra/rib.h
+index 166500fa5..5b81722b9 100644
+--- a/zebra/rib.h
++++ b/zebra/rib.h
+@@ -58,6 +58,7 @@ struct rnh {
+ 
+ 	/* VRF identifier. */
+ 	vrf_id_t vrf_id;
++	vrf_id_t lookup_backup;
+ 
+ 	afi_t afi;
+ 	safi_t safi;
+diff --git a/zebra/zapi_msg.c b/zebra/zapi_msg.c
+index a2233a666..93365e72f 100644
+--- a/zebra/zapi_msg.c
++++ b/zebra/zapi_msg.c
+@@ -1187,6 +1187,7 @@ static void zread_rnh_register(ZAPI_HANDLER_ARGS)
+ 	bool flag_changed = false;
+ 	uint8_t orig_flags;
+ 	safi_t safi;
++	uint8_t table_id_backup;
+ 
+ 	if (IS_ZEBRA_DEBUG_NHT)
+ 		zlog_debug(
+@@ -1203,9 +1204,10 @@ static void zread_rnh_register(ZAPI_HANDLER_ARGS)
+ 		STREAM_GETC(s, connected);
+ 		STREAM_GETC(s, resolve_via_default);
+ 		STREAM_GETW(s, safi);
++		STREAM_GETC(s, table_id_backup);
+ 		STREAM_GETW(s, p.family);
+ 		STREAM_GETC(s, p.prefixlen);
+-		l += 7;
++		l += 8;
+ 		if (p.family == AF_INET) {
+ 			client->v4_nh_watch_add_cnt++;
+ 			if (p.prefixlen > IPV4_MAX_BITLEN) {
+@@ -1233,7 +1235,7 @@ static void zread_rnh_register(ZAPI_HANDLER_ARGS)
+ 				p.family);
+ 			return;
+ 		}
+-		rnh = zebra_add_rnh(&p, zvrf_id(zvrf), safi, &exist);
++		rnh = zebra_add_rnh(&p, zvrf_id(zvrf), safi, table_id_backup, &exist);
+ 		if (!rnh)
+ 			return;
+ 
+diff --git a/zebra/zebra_rnh.c b/zebra/zebra_rnh.c
+index 599c67986..8f640943b 100644
+--- a/zebra/zebra_rnh.c
++++ b/zebra/zebra_rnh.c
+@@ -133,7 +133,7 @@ static void zebra_rnh_store_in_routing_table(struct rnh *rnh)
+ 	route_unlock_node(rn);
+ }
+ 
+-struct rnh *zebra_add_rnh(struct prefix *p, vrf_id_t vrfid, safi_t safi,
++struct rnh *zebra_add_rnh(struct prefix *p, vrf_id_t vrfid, safi_t safi, uint8_t table_id_backup,
+ 			  bool *exists)
+ {
+ 	struct route_table *table;
+@@ -177,6 +177,7 @@ struct rnh *zebra_add_rnh(struct prefix *p, vrf_id_t vrfid, safi_t safi,
+ 		rnh->resolved_route.family = p->family;
+ 		rnh->client_list = list_new();
+ 		rnh->vrf_id = vrfid;
++		rnh->lookup_backup = table_id_backup;
+ 		rnh->seqno = 0;
+ 		rnh->afi = afi;
+ 		rnh->safi = safi;
+@@ -346,7 +347,7 @@ void zebra_register_rnh_pseudowire(vrf_id_t vrf_id, struct zebra_pw *pw,
+ 		return;
+ 
+ 	addr2hostprefix(pw->af, &pw->nexthop, &nh);
+-	rnh = zebra_add_rnh(&nh, vrf_id, SAFI_UNICAST, &exists);
++	rnh = zebra_add_rnh(&nh, vrf_id, SAFI_UNICAST, rnh->lookup_backup, &exists);
+ 	if (!rnh)
+ 		return;
+ 
+diff --git a/zebra/zebra_rnh.h b/zebra/zebra_rnh.h
+index 44ce65b4b..696a33743 100644
+--- a/zebra/zebra_rnh.h
++++ b/zebra/zebra_rnh.h
+@@ -31,7 +31,7 @@ extern "C" {
+ 
+ extern void zebra_rnh_init(void);
+ 
+-extern struct rnh *zebra_add_rnh(struct prefix *p, vrf_id_t vrfid, safi_t safi,
++extern struct rnh *zebra_add_rnh(struct prefix *p, vrf_id_t vrfid, safi_t safi, uint8_t table_id_backup,
+ 				 bool *exists);
+ extern struct rnh *zebra_lookup_rnh(struct prefix *p, vrf_id_t vrfid,
+ 				    safi_t safi);
+-- 
+2.39.0
+
